@@ -27,14 +27,7 @@ Create table tblTaiKhoan
 	sChucvu nvarchar(50),  --Admin||Nhân Viên
 	sCheckxoa bit default 0
 )
-alter table tblTaiKhoan add sSDT nvarchar(50)
-alter table tblTaiKhoan add sTenhienthi nvarchar(50)
-alter table tblTaiKhoan drop column sTenhienthi 
-alter table tblTaiKhoan drop column sSDT 
-
-alter table tblTaiKhoan add dNgaybatdau datetime
-alter table tblTaiKhoan add sNam int
-select * from tblTaiKhoan
+go
 
 create table tblBan
 (
@@ -68,7 +61,6 @@ create table tblMonan
 	sTenmon nvarchar(50),
 	iGiamon int ,
 	sCheckxoa bit default 0
-
 
 )
 go
@@ -105,7 +97,7 @@ values	(N'Vũ Việt Trung',  '12345','Admin'),--1.Quản lý    0.Nhân viên
 		(N'Phạm Ánh Tuyết','98765','Nhân viên'),
 		(N'Tung', '1','Nhân viên'),
 		(N'Hoang', '1','Admin');
-
+go
 
 
 		
@@ -115,7 +107,7 @@ values (N'Bàn 1',N'Trống'),
 	   (N'Bàn 3', N'Có Người'),
 	   (N'Bàn 4', N'Có Người'),
 	   (N'Bàn 5', N'Trống')
-
+go
 
 
 insert into tblMonan(sMamon, sTenmon, iGiamon)
@@ -124,6 +116,7 @@ values (N'M1', N'Gà Kho ', 400 ),
 	   (N'M3', N'Lẩu', 120),
 	   (N'M4', N'Cua Cà mau', 150),
 	   (N'M5', N'Mực', 250)
+go
 
 insert into tblHoadon(sMahoadon, dThoigianvao, dThoigianra, sTrangthai,iGiamgia, fTongtien, sMaban, sTendangnhap)
 values 
@@ -133,6 +126,7 @@ values
 	   (N'HD4','2024-4-14 19:25:00','2024-4-14 19:25:00', N'Chưa thanh toán',10, 500000,N'Bàn 4', N'Vũ Việt Trung'),
 	   (N'HD5','2024-4-15 19:25:00','2024-4-15 19:25:00', N'Chưa thanh toán',10, 700000,N'Bàn 3', N'Phạm Ánh Tuyết'),
 	   (N'HD6','2024-4-11 19:25:00','2024-4-11 19:25:00', N'Chưa thanh toán',10, 1000000,N'Bàn 4', N'Vũ Việt Trung')
+go
 
 insert into tblDatmon(sMahoadon, sMamon, iSoluong)
 values (N'HD1', N'M1', 6),
@@ -142,14 +136,87 @@ values (N'HD1', N'M1', 6),
 	   (N'HD2', N'M4',2),
 	   (N'HD1', N'M2', 3)
 
+go
 
-select * from tblNhacungcap
 
-delete from tblDatmon
-delete from tblHoadon
-delete from tblMonan
-delete from tblBan
-delete from tblTaiKhoan
+
+
+
+--View hien
+
+
+/*create view vw_HienTaikhoan2
+as
+select sTendangnhap as[Tên đăng nhập], sMatkhau as[Mật khẩu],dNgaybatdau as[Ngày bắt đầu],sNam[Năm], sChucvu as[Chức vụ]
+from tblTaiKhoan where sCheckxoa=0
+go*/
+
+
+create view vw_HienTaikhoan
+as
+select sTendangnhap as[Tên đăng nhập], sMatkhau as[Mật khẩu], sChucvu as[Chức vụ]
+from tblTaiKhoan where sCheckxoa=0
+go
+
+
+create view vw_HienBan
+as
+select sMaban as[Mã bàn],sTrangthai as[Trạng thái] 
+from tblBan
+where  tblBan.sCheckxoa=0
+go
+
+
+create view vw_HienHoadon
+as
+select sMahoadon as[Mã hóa đơn], dThoigianvao as[Thời gian vào] , dThoigianra as[Thời gian ra] , tblHoadon.sTrangthai as[Trạng thái thanh toán],iGiamgia as[Giảm giá theo %] , fTongtien as[Tổng tiền],tblBan.sMaban as[Bàn],tblTaiKhoan.sTendangnhap as[Tên đăng nhập]
+from tblHoadon,tblBan,tblTaiKhoan 
+where tblHoadon.sMaban= tblBan.sMaban and tblHoadon.sTendangnhap=tblTaiKhoan.sTendangnhap and tblHoadon.sCheckxoa=0
+go
+
+create view vw_HienMonan
+as
+select sTenmon as[Tên món], iGiamon as[Giá món]
+from tblMonan where tblMonan.sCheckxoa=0
+go
+
+
+create proc sp_HienDatmon
+(@sMahoadon nvarchar(20))
+as
+begin
+	select tblMonan.sTenmon as[Tên món],iSoluong as[Số lượng],tblMonan.iGiamon as[Đơn giá món]
+	from tblDatmon,tblHoadon,tblMonan
+	where tblDatmon.sMahoadon=@sMahoadon and tblDatmon.sMahoadon=tblHoadon.sMahoadon and tblDatmon.sMamon=tblMonan.sMamon
+	and tblDatmon.sCheckxoa=0
+end
+go
+
+create proc sp_LayMonan
+(@sTenmon nvarchar(50))
+as
+begin
+	select * from tblMonan where sTenmon=@sTenmon and sCheckxoa=0
+end
+go
+
+create proc sp_LayHoadon
+(@sMaban nvarchar(20))
+as
+begin
+select * from tblHoadon where sMaban=@sMaban and sTrangthai =N'Chưa thanh toán'
+end
+go
+
+create view vw_HienDatmon
+as
+select tblBan.sMaban as [Bàn],tblMonan.sTenmon as[Tên món],tblDatmon.iSoluong as[Số lượng món]
+from tblDatmon,tblHoadon join tblBan on tblHoadon.sMaban=tblBan.sMaban,tblMonan 
+where tblDatmon.sMamon= tblMonan.sMamon and tblDatmon.sMahoadon=tblHoadon.sMahoadon and tblDatmon.sCheckxoa=0
+go
+
+
+
 
 
 --DatMon
@@ -162,8 +229,6 @@ begin
 	where sMaban=@sMaban and tblBan.sCheckxoa=0
 end
 go
-
-select * from tblHoadon
 
 create proc sp_Suatrangthaiban
 (@sTrangthai nvarchar(50),@sMaban nvarchar(20))
@@ -189,106 +254,6 @@ begin
 	select * from tblTaiKhoan where sTendangnhap = @sTendangnhap and sCheckxoa=0
 end
 go
-
-
-
-
-
---View hien
-
-
-create view vw_HienTaikhoan2
-as
-select sTendangnhap as[Tên đăng nhập], sMatkhau as[Mật khẩu],dNgaybatdau as[Ngày bắt đầu],sNam[Năm], sChucvu as[Chức vụ]
-from tblTaiKhoan where sCheckxoa=0
-go
-
-
-create view vw_HienTaikhoan
-as
-select sTendangnhap as[Tên đăng nhập], sMatkhau as[Mật khẩu], sChucvu as[Chức vụ]
-from tblTaiKhoan where sCheckxoa=0
-go
-
-drop view vw_HienTaikhoan
-
-create view vw_HienBan
-as
-select sMaban as[Mã bàn],sTrangthai as[Trạng thái] 
-from tblBan
-where  tblBan.sCheckxoa=0
-go
-
-select * from tblBan
-
-drop view vw_HienBan
-
-create view vw_HienHoadon
-as
-select sMahoadon as[Mã hóa đơn], dThoigianvao as[Thời gian vào] , dThoigianra as[Thời gian ra] , tblHoadon.sTrangthai as[Trạng thái thanh toán],iGiamgia as[Giảm giá theo %] , fTongtien as[Tổng tiền],tblBan.sMaban as[Bàn],tblTaiKhoan.sTendangnhap as[Tên đăng nhập]
-from tblHoadon,tblBan,tblTaiKhoan 
-where tblHoadon.sMaban= tblBan.sMaban and tblHoadon.sTendangnhap=tblTaiKhoan.sTendangnhap and tblHoadon.sCheckxoa=0
-go
-
-drop view vw_HienHoadon
-go
-
-
-/*
-select * from tblBan
-
-drop view vw_HienHoadon
-
-*/
-create view vw_HienMonan
-as
-select sTenmon as[Tên món], iGiamon as[Giá món]
-from tblMonan where tblMonan.sCheckxoa=0
-go
-
-drop view vw_HienMonan
-
-create proc sp_HienDatmon
-(@sMahoadon nvarchar(20))
-as
-begin
-	select tblMonan.sTenmon as[Tên món],iSoluong as[Số lượng],tblMonan.iGiamon as[Đơn giá món]
-	from tblDatmon,tblHoadon,tblMonan
-	where tblDatmon.sMahoadon=@sMahoadon and tblDatmon.sMahoadon=tblHoadon.sMahoadon and tblDatmon.sMamon=tblMonan.sMamon
-	and tblDatmon.sCheckxoa=0
-end
-go
-/*
-drop proc sp_HienDatmon
-*/
-create proc sp_LayMonan
-(@sTenmon nvarchar(50))
-as
-begin
-	select * from tblMonan where sTenmon=@sTenmon and sCheckxoa=0
-end
-
-create proc sp_LayHoadon
-(@sMaban nvarchar(20))
-as
-begin
-select * from tblHoadon where sMaban=@sMaban and sTrangthai =N'Chưa thanh toán'
-end
-
-select * from tblHoadon where sMaban='Bàn 3' and sTrangthai =N'Chưa thanh toán'
-
-
-create view vw_HienDatmon
-as
-select tblBan.sMaban as [Bàn],tblMonan.sTenmon as[Tên món],tblDatmon.iSoluong as[Số lượng món]
-from tblDatmon,tblHoadon join tblBan on tblHoadon.sMaban=tblBan.sMaban,tblMonan 
-where tblDatmon.sMamon= tblMonan.sMamon and tblDatmon.sMahoadon=tblHoadon.sMahoadon and tblDatmon.sCheckxoa=0
-go
-drop view vw_HienHoadon 
-/*
-
-
-*/
 --Thủ tục đăng nhập
 
 create proc sp_Dangnhap
@@ -325,7 +290,7 @@ begin
 values(@sTendangnhap,@sMatkhau,@sChucvu,@sSDT)
 end
 go
-*/
+
 
 create proc sp_NhapTaikhoan2
 (	@sTendangnhap nvarchar(50) ,
@@ -338,7 +303,7 @@ begin
 	insert into tblTaiKhoan(sTendangnhap, sMatkhau,dNgaybatdau,sNam, sChucvu) 
 values(@sTendangnhap,@sMatkhau,@dNgaybatdau,@sNam,@sChucvu)
 end
-go
+go*/
 
 
 
@@ -375,8 +340,8 @@ begin
 	insert into tblMonan(sMamon,sTenmon,iGiamon)
 	values(@sMamon,@sTenmon,@iGiamon)
 end
-/*
-*/
+go
+
 create proc sp_NhapHoadon
 (@sMahoadon nvarchar(20),
 	@dThoigianvao datetime ,
@@ -391,7 +356,6 @@ values (@sMahoadon,@dThoigianvao,@sMaban,@sTrangthai,@sTendangnhap)
 end
 go
 
-drop proc sp_NhapHoadon
 
 create proc sp_ThemDatmon
 (@sMahoadon nvarchar(20),
@@ -403,13 +367,12 @@ insert into tblDatmon(sMahoadon, sMamon, iSoluong)
 values (@sMahoadon ,@sMamon,@iSoluong)
 end
 go
-/*
-/*
+
 
 --Thủ tục Sửa bảng
-*/*/
 
-create proc sp_SuaTaikhoan2
+
+/*create proc sp_SuaTaikhoan2
 (	@sTendangnhap nvarchar(50) ,
 	@sMatkhau nvarchar(1000),
 	@sChucvu nvarchar(50),
@@ -419,7 +382,7 @@ as
 begin
 	update tblTaiKhoan set sMatkhau=@sMatkhau,@dNgaybatdau=@dNgaybatdau,sNam=@sNam,sChucvu=@sChucvu where sTendangnhap = @sTendangnhap
 end
-go
+go*/
 
 create proc sp_SuaTaikhoan
 (@sTendangnhap nvarchar(50) ,
@@ -431,20 +394,6 @@ begin
 	update tblTaiKhoan set sMatkhau=@sMatkhau,sChucvu=@sChucvu where sTendangnhap = @sTendangnhap
 end
 go
-/*
-
-create proc sp_SuaBan
-(	@sMaban nvarchar(20) ,
-	@iSoluong int,
-	@sTrangthai nvarchar(50) ,   --Trống || Có người
-	@sTendangnhap nvarchar(50))
-as
-begin
-	
-	update tblBan set sTrangthai=@sTendangnhap,sTendangnhap=@sTendangnhap where sMaban=@sMaban
-end
-go
-*/
 
 create proc sp_SuaHoadon
 (@sMahoadon nvarchar(20),
@@ -467,20 +416,8 @@ as
 begin
 	update tblMonan set sTenmon=@sTenmon,iGiamon=@iGiamon where sMamon=@sMamon
 end
-drop proc sp_SuaMonan
-/*
-drop proc sp_SuaHoadon
-create proc sp_SuaMon
-(@sMamon nvarchar(20),
-	@sTenmon nvarchar(50),
-	@iGiamon int ,
-	@sTendangnhap nvarchar(50))
-as
-begin
-	update tblMonan set sTenmon=@sTenmon,iGiamon=@iGiamon,sTendangnhap=@sTendangnhap where sMamon=@sMamon
-end
 go
-*/
+
 create proc sp_SuaDatmon
 (@sMahoadon nvarchar(20),
 	@sMamon nvarchar(20) ,
@@ -490,12 +427,7 @@ begin
 	update tblDatmon set iSoluong=@iSoluong where sMahoadon=@sMahoadon and sMamon =@sMamon
 end
 go
-/*
-drop proc sp_SuaDatmon
 
-
---Thủ tục xóa dữ liệu
-*/*/
 create proc sp_XoaTaikhoan
 (@sTendangnhap nvarchar(50),
 @sCheckxoa bit)
@@ -505,7 +437,6 @@ begin
 end
 go
 
-select * from tblTaiKhoan
 
 create proc sp_XoaBan
 (@sMaban nvarchar(20),
@@ -515,18 +446,7 @@ begin
 	update tblBan set sCheckxoa=@sCheckxoa where sMaban=@sMaban
 end
 go
-/*
-drop proc sp_XoaBan
-go
 
-create proc sp_XoaHoadon
-(@sMahoadon nvarchar(20))
-as
-begin
-	delete from tblHoadon where sMahoadon=@sMahoadon
-end
-go
-*/
 create proc sp_XoaMon
 (@sMamon nvarchar(20))
 as
@@ -535,19 +455,7 @@ begin
 end
 go
 
-select * from tblMonan
 
-/*
-create proc sp_XoaDatmon
-(@sMahoadon nvarchar(20),
-	@sMamon nvarchar(20))
-as
-begin
-	delete from tblDatmon where sMahoadon=@sMahoadon and sMamon=@sMamon
-end
-go
--- @sTendangnhap ='%'+t+'%'
-*/
 --thủ tục Tìm kiếm tương đối
 create proc sp_TimTaikhoan
 (@sTendangnhap nvarchar(50))
@@ -558,18 +466,7 @@ begin
 	from tblTaiKhoan where sTendangnhap like @sTendangnhap
 end
 go
-/*
-create proc sp_TimBan
-(
-	@iSoluongcho int)
-as
-begin
-	select sMaban as[Mã bàn],iSoluongcho as[Số lương] ,sTrangthai as[Trạng thái]
-	from tblBan,tblTaiKhoan
-	where tblBan.sTendangnhap=tblTaiKhoan.sTendangnhap and iSoluongcho=@iSoluongcho
-end
-go
-*/
+
 
 create proc sp_TimMonan
 (@sTenmon nvarchar(50))
@@ -579,24 +476,7 @@ begin
 	select sTenmon as[Tên món ăn], iGiamon as[Giá món]
 	from tblMonan where tblMonan.sCheckxoa=0 and sTenmon like @sTenmon
 end
-drop proc sp_TimMonan
-/*
-drop proc sp_TimTaikhoan
-select sTendangnhap,sMatkhau from tblTaiKhoan where sTendangnhap='Tung' and sMatkhau='1'
-
- select * from vw_HienDatmon
- drop view vw_HienDatmon
- select * from tblHoadon
- 
- sMahoadon nvarchar(20) primary key ,
-	sTrangthai nvarchar(50),
-	dThoigianvao datetime,
-	dThoigianra datetime,
-	fTongtien float,
-	sMaban nvarchar(20),
-	sCheckxoa bit default 0,
-	sTendangnhap nvarchar(50),
- */
+go
 
  --Thống kê
 create proc sp_Thongkehdtheongay
@@ -635,27 +515,8 @@ and tblHoadon.sCheckxoa=0 and fTongtien>@fTongtientruoc and fTongtien<@fTongtien
 end
 go
 
-select sMahoadon as[Mã hóa đơn], dThoigianvao as[Thời gian vào] , dThoigianra as[Thời gian ra] , tblHoadon.sTrangthai as[Trạng thái thanh toán] , fTongtien as[Tổng tiền],tblBan.sMaban as[Bàn],tblTaiKhoan.sTendangnhap as[Tên đăng nhập]
-from tblHoadon,tblBan,tblTaiKhoan 
-where  tblBan.sMaban=tblHoadon.sMaban and tblHoadon.sTendangnhap=tblTaiKhoan.sTendangnhap 
 
-select * from tblHoadon where YEAR(dThoigianra)=2024
-/*
-Create table tblTaiKhoan
-(	
-	sTendangnhap nvarchar(50) primary key,
-	sMatkhau nvarchar(1000),
-	sChucvu nvarchar(50),  --Admin||Nhân Viên
-	sCheckxoa bit default 0
-)
-
-alter table tblTaiKhoan add sSDT nvarchar(50)
-alter table tblTaiKhoan add sTenhienthi nvarchar(50)
-alter table tblTaiKhoan drop column sTenhienthi 
-alter table tblTaiKhoan drop column sSDT 
-
-*/
-create proc sp_Thongketaikhoan
+/*create proc sp_Thongketaikhoan
 (
 	@sNamset int
 )
@@ -663,7 +524,6 @@ as
 begin
 	select sTendangnhap as[Tên đăng nhập], sMatkhau as[Mật khẩu],dNgaybatdau as[Ngày bắt đầu],sNam[Năm], sChucvu as[Chức vụ]
 from tblTaiKhoan where sCheckxoa=0 and sNam=@sNamset
-end
-drop proc sp_Thongketaikhoan
-select* from tblHoadon
+end*/
+
 
