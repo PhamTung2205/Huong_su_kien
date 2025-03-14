@@ -267,8 +267,8 @@ go
 
 
 
-/*
-drop proc sp_Dangnhap
+
+
 
 create proc sp_Hienchucvu
 (@sTendangnhap nvarchar(50))
@@ -277,7 +277,7 @@ begin
 	select sChucvu from tblTaiKhoan where sTendangnhap =@sTendangnhap
 end
 go
-*/
+
 
 /*create proc sp_NhapTaikhoan1
 (	@sTendangnhap nvarchar(50) ,
